@@ -67,8 +67,6 @@ cp .env.example .env
 OPENAI_API_KEY=sk-proj-your-actual-key-here
 ```
 
-**⚠️ Security Note:** Never commit `.env` to version control. It's listed in `.gitignore`.
-
 ---
 
 # Run the application
