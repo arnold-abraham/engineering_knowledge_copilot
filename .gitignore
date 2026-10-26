@@ -44,8 +44,10 @@ MANIFEST
 
 # Uploaded documents (user files)
 uploaded_docs/
-*.pdf
-*.txt
+
+# Local-only files
+Engineering_Knowledge_Copilot_Guide.pdf
+.claude/settings.local.json
 
 # Cache
 .cache/
