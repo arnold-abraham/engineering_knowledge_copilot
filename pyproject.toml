@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+filterwarnings = [
+    # Emitted by faiss's SWIG bindings on import; not actionable
+    "ignore:builtin type .* has no __module__ attribute:DeprecationWarning",
+]
