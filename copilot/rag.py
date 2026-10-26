@@ -4,7 +4,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models import BaseChatModel
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from copilot import config
@@ -18,6 +18,7 @@ SYSTEM_PROMPT = (
 
 PROMPT = ChatPromptTemplate.from_messages([
     ("system", SYSTEM_PROMPT),
+    MessagesPlaceholder("history"),
     ("human", "Context:\n{context}\n\nQuestion: {input}"),
 ])
 
@@ -53,14 +54,24 @@ def unique_sources(docs: list[Document]) -> list[Document]:
 def answer_question(
     question: str,
     vectorstore: FAISS,
+    history: Optional[list[tuple[str, str]]] = None,
     llm: Optional[BaseChatModel] = None,
 ) -> tuple[str, list[Document]]:
-    """Retrieve relevant chunks and ask the LLM. Returns (answer, retrieved_docs)."""
+    """Retrieve relevant chunks and ask the LLM. Returns (answer, retrieved_docs).
+
+    history is a list of (role, content) pairs, role being "user" or "assistant".
+    Only the most recent HISTORY_TURNS question/answer pairs are sent.
+    """
     llm = llm or ChatOpenAI(model=config.CHAT_MODEL, temperature=0)
     retriever = vectorstore.as_retriever(search_kwargs={"k": config.RETRIEVER_K})
 
     retrieved_docs = retriever.invoke(question)
-    result = (PROMPT | llm).invoke({"context": format_context(retrieved_docs), "input": question})
+    recent_history = (history or [])[-2 * config.HISTORY_TURNS:]
+    result = (PROMPT | llm).invoke({
+        "context": format_context(retrieved_docs),
+        "history": recent_history,
+        "input": question,
+    })
 
     answer = result.content if hasattr(result, "content") else str(result)
     return answer, retrieved_docs

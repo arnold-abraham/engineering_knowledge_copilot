@@ -6,6 +6,16 @@ from copilot.rag import answer_question, build_vectorstore, source_label, unique
 
 st.set_page_config(page_title="Engineering Knowledge Copilot", layout="wide")
 
+
+def render_sources(sources: list[tuple[str, str]]) -> None:
+    if not sources:
+        return
+    with st.expander("Sources"):
+        for label, snippet in sources:
+            st.markdown(f"**{label}**")
+            st.code(snippet)
+
+
 st.title("🧠 Engineering Knowledge Copilot")
 st.markdown(
     '''
@@ -14,7 +24,7 @@ This project demonstrates:
 - RAG (Retrieval-Augmented Generation)
 - Embeddings + Vector Search
 - OpenAI API Integration
-- Stateful Chat Memory
+- Chat Memory (recent turns)
 - Document Grounding with Citations
 '''
 )
@@ -33,8 +43,6 @@ if "vectorstore" not in st.session_state:
     st.session_state.vectorstore = None
     st.session_state.index_key = None
     st.session_state.chunk_count = 0
-
-if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
 # Streamlit reruns this script on every interaction, so only re-embed when the uploads change
@@ -43,6 +51,7 @@ index_key = tuple(f.file_id for f in uploaded_files)
 if index_key != st.session_state.index_key:
     st.session_state.vectorstore = None
     st.session_state.index_key = index_key
+    st.session_state.chat_history = []
 
     if uploaded_files:
         docs = []
@@ -71,20 +80,27 @@ if st.session_state.vectorstore:
 
     st.success(f"Processed {st.session_state.chunk_count} document chunks.")
 
-    user_question = st.text_input("Ask a technical question")
+    for message in st.session_state.chat_history:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            render_sources(message["sources"])
 
-    if user_question:
+    if question := st.chat_input("Ask a technical question"):
 
-        answer, retrieved_docs = answer_question(user_question, st.session_state.vectorstore)
+        with st.chat_message("user"):
+            st.markdown(question)
 
-        st.subheader("Answer")
-        st.write(answer)
+        history = [(m["role"], m["content"]) for m in st.session_state.chat_history]
 
-        st.subheader("Sources")
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                answer, retrieved_docs = answer_question(question, st.session_state.vectorstore, history)
+            sources = [(source_label(doc), doc.page_content[:700]) for doc in unique_sources(retrieved_docs)]
+            st.markdown(answer)
+            render_sources(sources)
 
-        for doc in unique_sources(retrieved_docs):
-            st.markdown(f"**{source_label(doc)}**")
-            st.code(doc.page_content[:700])
+        st.session_state.chat_history.append({"role": "user", "content": question, "sources": []})
+        st.session_state.chat_history.append({"role": "assistant", "content": answer, "sources": sources})
 
 else:
     st.info("Upload files to begin.")

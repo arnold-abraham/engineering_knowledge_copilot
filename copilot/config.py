@@ -10,5 +10,6 @@ CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o-mini")
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 RETRIEVER_K = 4
+HISTORY_TURNS = 4  # past question/answer pairs sent to the LLM
 
 SUPPORTED_EXTENSIONS = ["pdf", "py", "cpp", "c", "txt", "md"]
