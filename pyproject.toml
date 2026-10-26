@@ -5,3 +5,11 @@ filterwarnings = [
     # Emitted by faiss's SWIG bindings on import; not actionable
     "ignore:builtin type .* has no __module__ attribute:DeprecationWarning",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+extend-exclude = ["generate_guide.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
