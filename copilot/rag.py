@@ -11,7 +11,9 @@ from copilot import config
 
 SYSTEM_PROMPT = (
     "You are an expert engineering assistant. Use the provided context to answer technical questions. "
-    "If you cannot answer based on the context, say so. Always cite your sources."
+    "If you cannot answer based on the context, say so. "
+    "Each context chunk starts with a bracketed source label, e.g. [paper.pdf, p. 3]. "
+    "Cite the labels you used inline, exactly as written."
 )
 
 PROMPT = ChatPromptTemplate.from_messages([
@@ -25,18 +27,25 @@ def build_vectorstore(chunks: list[Document], embeddings: Optional[Embeddings] =
     return FAISS.from_documents(chunks, embeddings or OpenAIEmbeddings())
 
 
+def source_label(doc: Document) -> str:
+    """Human-readable citation, e.g. "paper.pdf, p. 3" (PDF pages are 0-indexed in metadata)."""
+    source = doc.metadata.get("source", "Unknown Source")
+    page = doc.metadata.get("page")
+    return f"{source}, p. {page + 1}" if isinstance(page, int) else source
+
+
 def format_context(docs: list[Document]) -> str:
-    return "\n\n".join(doc.page_content for doc in docs)
+    return "\n\n".join(f"[{source_label(doc)}]\n{doc.page_content}" for doc in docs)
 
 
 def unique_sources(docs: list[Document]) -> list[Document]:
-    """Keep the first retrieved chunk per source file."""
+    """Keep the first retrieved chunk per citation label (source + page)."""
     seen = set()
     unique = []
     for doc in docs:
-        source = doc.metadata.get("source", "Unknown Source")
-        if source not in seen:
-            seen.add(source)
+        label = source_label(doc)
+        if label not in seen:
+            seen.add(label)
             unique.append(doc)
     return unique
 

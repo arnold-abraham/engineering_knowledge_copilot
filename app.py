@@ -2,7 +2,7 @@ import streamlit as st
 
 from copilot import config
 from copilot.ingest import load_bytes, split_documents
-from copilot.rag import answer_question, build_vectorstore, unique_sources
+from copilot.rag import answer_question, build_vectorstore, source_label, unique_sources
 
 st.set_page_config(page_title="Engineering Knowledge Copilot", layout="wide")
 
@@ -83,7 +83,7 @@ if st.session_state.vectorstore:
         st.subheader("Sources")
 
         for doc in unique_sources(retrieved_docs):
-            st.markdown(f"**{doc.metadata.get('source', 'Unknown Source')}**")
+            st.markdown(f"**{source_label(doc)}**")
             st.code(doc.page_content[:700])
 
 else:
