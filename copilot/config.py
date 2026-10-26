@@ -11,5 +11,4 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 RETRIEVER_K = 4
 
-UPLOAD_DIR = "uploaded_docs"
 SUPPORTED_EXTENSIONS = ["pdf", "py", "cpp", "c", "txt", "md"]

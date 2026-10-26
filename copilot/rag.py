@@ -21,15 +21,8 @@ PROMPT = ChatPromptTemplate.from_messages([
 
 
 def build_vectorstore(chunks: list[Document], embeddings: Optional[Embeddings] = None) -> FAISS:
-    """Embed chunks into a FAISS index. Raises RuntimeError if embeddings come back empty."""
-    embeddings = embeddings or OpenAIEmbeddings()
-
-    # Sanity-check a single embedding to surface informative errors early
-    test_emb = embeddings.embed_documents([chunks[0].page_content])
-    if not test_emb or len(test_emb[0]) == 0:
-        raise RuntimeError("Embeddings returned empty vectors. Verify the embedding backend and API key.")
-
-    return FAISS.from_documents(chunks, embeddings)
+    """Embed chunks into a FAISS index."""
+    return FAISS.from_documents(chunks, embeddings or OpenAIEmbeddings())
 
 
 def format_context(docs: list[Document]) -> str:
